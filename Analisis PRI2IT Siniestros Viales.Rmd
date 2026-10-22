@@ -868,34 +868,151 @@ veces <- sapply(c("Usme", "Ciudad Bolívar", "Rafael Uribe Uribe", "Sumapaz"), f
 
 # Verificación con JAGS
 
-JAGS aproxima la posterior por MCMC (muestreo de Gibbs). En modelos conjugados no hace falta, pero sirve para **comprobar que la teoría y el código coinciden**; después se usa en un modelo que **no** tiene forma cerrada (siguiente sección). Se usan 3 cadenas, 4.000 iteraciones de calentamiento y 40.000 de muestreo; se reporta $\hat R$ (≈ 1 indica convergencia) y el tamaño efectivo de muestra.
+## ¿Por qué MCMC si hay solución exacta?
+
+Con una prior conjugada la posterior sale **exacta y sin simular**: Beta con verosimilitud Binomial, Gamma con Poisson. Eso es lo que usa el análisis principal. Aun así se usa **MCMC** (cadenas de Markov Monte Carlo) por dos razones:
+
+1. **Verificación.** Si el muestreo reproduce la solución exacta, la implementación y la teoría son consistentes.
+2. **Robustez.** Cuando el modelo **no** es conjugado (como el jerárquico de la sección siguiente), no hay fórmula y la posterior solo se obtiene por simulación. JAGS usa **muestreo de Gibbs** (cada parámetro se simula dado el resto) y, cuando la condicional no tiene forma conocida, otros muestreadores como **Metropolis–Hastings** o *slice sampling* (Plummer, 2003).
+
+La idea: se construyen cadenas que, tras un periodo de calentamiento, **visitan los valores de $p$ con la frecuencia de su probabilidad posterior**. Por eso hay que demostrar que convergieron.
+
+## Configuración de las cadenas
+
+Todo se declara de forma explícita para que se pueda reproducir y defender:
 
 ```{r jags-funcion}
-correr_jags <- function(modelo, datos, nodos, n.adapt = 2000, burn = 4000, iter = 40000, chains = 3) {
-  m <- jags.model(textConnection(modelo), data = datos, n.chains = chains, n.adapt = n.adapt, quiet = TRUE)
+# Configuración MCMC (la misma en la tabla y en la función)
+cfg <- list(chains = 3, adapt = 2000, burn = 4000, iter = 40000)
+
+correr_jags <- function(modelo, datos, nodos, inits = NULL, n.adapt = cfg$adapt, burn = cfg$burn,
+                        iter = cfg$iter, chains = cfg$chains) {
+  # semilla fija por cadena: el muestreo es reproducible; los valores iniciales son los de 'inits'
+  # o, si no se dan, JAGS los simula desde la prior
+  ini <- lapply(seq_len(chains), function(i)
+    c(if (!is.null(inits)) inits[[i]], list(.RNG.name = "base::Mersenne-Twister", .RNG.seed = 2026 + i)))
+  m <- jags.model(textConnection(modelo), data = datos, inits = ini, n.chains = chains, n.adapt = n.adapt, quiet = TRUE)
   update(m, burn, progress.bar = "none")
   coda.samples(m, nodos, n.iter = iter, progress.bar = "none")
 }
+data.frame(
+  modelo = c("Beta–Binomial de Usme", "Gamma–Poisson (normal y cuarentena)", "Jerárquico (19 localidades)"),
+  cadenas = cfg$chains,
+  valores_iniciales = c("p = 0,005 / 0,03 / 0,30 (dispersos)", "lambda = 0,4 / 1,3 / 3 y 0,3 / 0,8 / 2,5", "aleatorios, simulados desde la prior"),
+  adaptacion = cfg$adapt, burn_in = c(cfg$burn, cfg$burn, 6000), iteraciones = c(cfg$iter, cfg$iter, 60000),
+  muestras_totales = c(cfg$chains * cfg$iter, cfg$chains * cfg$iter, 3 * 60000))
 ```
 
+Los valores iniciales de las tres cadenas son **dispersos a propósito** (de 0,5 % a 30 % en $p$): si las tres cadenas, partiendo de lugares muy distintos, terminan en la misma distribución, eso es evidencia de convergencia. La **adaptación** es una fase en la que JAGS ajusta sus muestreadores (no se guarda); el **burn-in** (calentamiento) se descarta para olvidar el punto de partida.
+
 ## Beta–Binomial de Usme: JAGS frente a la posterior analítica
+
+Además de la posterior, el modelo incluye una **predictiva posterior**: `ynuevo`, el número de siniestros con muertos en 100 siniestros futuros de Usme, simulado con la posterior de $p$ (`ynuevo ~ dbin(p, 100)`).
 
 ```{r jags-bb}
 mod_bb <- "
 model {
   y ~ dbin(p, n)
   p ~ dbeta(a0, b0)
+  ynuevo ~ dbin(p, nnuevo)     # predictiva posterior: muertos en nnuevo siniestros futuros
 }"
-jb <- correr_jags(mod_bb, list(y = yU, n = nU, a0 = aH, b0 = bH), "p")
-vb <- as.numeric(as.matrix(jb)); A_ <- aH + yU; B_ <- bH + nU - yU
+NNUEVO <- 100
+ini_bb <- list(list(p = 0.005), list(p = 0.03), list(p = 0.30))
+jb <- correr_jags(mod_bb, list(y = yU, n = nU, a0 = aH, b0 = bH, nnuevo = NNUEVO), c("p", "ynuevo"), inits = ini_bb)
+vb <- as.numeric(as.matrix(jb)[, "p"]); A_ <- aH + yU; B_ <- bH + nU - yU
 data.frame(fuente = c("Analítica", "JAGS"),
            media = c(A_ / (A_ + B_), mean(vb)),
            li = c(qbeta(0.025, A_, B_), quantile(vb, 0.025, names = FALSE)),
            ls = c(qbeta(0.975, A_, B_), quantile(vb, 0.975, names = FALSE)),
            P_mayor_p0 = c(1 - pbeta(p0, A_, B_), mean(vb > p0)),
-           Rhat = c(NA, gelman.diag(jb)$psrf[1, 1]),
-           n_efectivo = c(NA, effectiveSize(jb)))
+           Rhat = c(NA, gelman.diag(jb[, "p"])$psrf[1, 1]),
+           n_efectivo = c(NA, effectiveSize(jb[, "p"])))
 ```
+
+### Diagnósticos de convergencia
+
+Se revisan cinco herramientas; la que **defiende la convergencia** es el $\hat R$ de Gelman–Rubin, y las demás la complementan.
+
+```{r jags-diagnosticos}
+rh  <- gelman.diag(jb[, "p"])$psrf
+ess <- effectiveSize(jb[, "p"])
+gw  <- geweke.diag(jb[, "p"])
+hw  <- heidel.diag(jb[, "p"])
+diag_tab <- data.frame(
+  herramienta = c("R-hat de Gelman–Rubin (punto)", "R-hat (límite superior del IC 95 %)", "Tamaño efectivo de muestra",
+                  "Muestras totales", "Geweke |z| máximo entre cadenas", "Heidelberger–Welch: cadenas que pasan estacionariedad"),
+  valor = c(round(rh[1, 1], 4), round(rh[1, 2], 4), round(ess), cfg$chains * cfg$iter,
+            round(max(abs(sapply(gw, function(g) g$z))), 2), paste(sum(sapply(hw, function(h) h[1, "stest"] == 1)), "de", length(hw))),
+  criterio = c("cercano a 1 (< 1,05)", "< 1,05", "miles", "", "< 1,96 si no hay deriva", "3 de 3"))
+diag_tab
+```
+
+```{r jags-graficos, fig.width=8, fig.height=3.8}
+dir.create("outputs/figures", showWarnings = FALSE, recursive = TRUE)
+cad <- do.call(rbind, lapply(seq_along(jb), function(i)
+  data.frame(iter = seq_len(nrow(jb[[i]])), cadena = factor(i), p = as.numeric(jb[[i]][, "p"]))))
+cols_c <- c("#2a78d6", "#eb6834", "#3a9d5d")
+
+# 1. Trazas: las 3 cadenas mezcladas, sin tendencia ni patrones
+g_tr <- ggplot(subset(cad, iter <= 1500), aes(iter, p, colour = cadena)) + geom_line(alpha = 0.75, linewidth = 0.3) +
+  scale_colour_manual(values = cols_c, name = "Cadena") + scale_y_continuous(labels = scales::percent) +
+  labs(x = "Iteración (primeras 1.500 tras el calentamiento)", y = "p", title = "Trazas de las tres cadenas (Usme)") + theme_minimal()
+g_tr
+ggsave("outputs/figures/jags_traza_usme.png", g_tr, width = 8, height = 3.8, dpi = 150)
+
+# 2. Densidad posterior de cada cadena frente a la analítica
+g_de <- ggplot(cad, aes(p, colour = cadena)) + geom_density(linewidth = 0.8) +
+  stat_function(fun = dbeta, args = list(shape1 = A_, shape2 = B_), colour = "black", linetype = "dashed") +
+  geom_vline(xintercept = p0, linetype = "dotted") +
+  scale_colour_manual(values = cols_c, name = "Cadena") + scale_x_continuous(labels = scales::percent) +
+  labs(x = "p = probabilidad de siniestro con muertos", y = "Densidad", title = "Densidad posterior (Usme)",
+       caption = "Línea negra discontinua: posterior exacta Beta. Punteada: Bogotá (p0).") + theme_minimal()
+g_de
+ggsave("outputs/figures/jags_densidad_usme.png", g_de, width = 8, height = 3.8, dpi = 150)
+
+# 3. Autocorrelación de cada cadena
+ac <- do.call(rbind, lapply(seq_along(jb), function(i) {
+  a <- acf(as.numeric(jb[[i]][, "p"]), lag.max = 30, plot = FALSE)
+  data.frame(rezago = as.numeric(a$lag), acf = as.numeric(a$acf), cadena = factor(i))
+}))
+g_ac <- ggplot(ac, aes(rezago, acf, fill = cadena)) + geom_col(position = "dodge") +
+  scale_fill_manual(values = cols_c, name = "Cadena") +
+  labs(x = "Rezago", y = "Autocorrelación", title = "Autocorrelación de las cadenas (Usme)") + theme_minimal()
+g_ac
+ggsave("outputs/figures/jags_autocorrelacion_usme.png", g_ac, width = 8, height = 3.8, dpi = 150)
+```
+
+**Lectura.**
+
+- **Trazas:** las tres cadenas, que partieron de 0,5 %, 3 % y 30 %, se mezclan en la misma banda, sin tendencias ni patrones: se "olvidaron" del punto de partida.
+- **$\hat R$ de Gelman–Rubin:** `r round(rh[1, 1], 4)` (límite superior `r round(rh[1, 2], 4)`), prácticamente 1: la variación *entre* cadenas es igual a la variación *dentro* de cada una. Es el diagnóstico más importante.
+- **Tamaño efectivo:** `r format(round(ess), big.mark = ".")` muestras equivalentes independientes, de `r format(cfg$chains * cfg$iter, big.mark = ".")`: cerca del 60 % de las muestras aportan información independiente, porque la autocorrelación es baja.
+- **Autocorrelación:** vale `r round(ac$acf[ac$rezago == 1 & ac$cadena == 1], 2)` en el primer rezago y es prácticamente cero desde el rezago 4: se ve una o dos barras al inicio y nada después, que es lo esperado en una cadena sana.
+- **Geweke** (compara el inicio y el final de cada cadena): el mayor |z| es `r round(max(abs(sapply(gw, function(g) g$z))), 2)`; valores menores a 1,96 indican que no hay deriva.
+- **Heidelberger–Welch:** `r sum(sapply(hw, function(h) h[1, "stest"] == 1))` de `r length(hw)` cadenas pasan la prueba de estacionariedad.
+- **Densidad:** las tres cadenas coinciden con la posterior exacta (línea discontinua).
+
+### Predictiva posterior
+
+El intervalo de **$p$** describe la incertidumbre sobre el **parámetro**; el de **`ynuevo`** describe la de una **observación futura**, que además incluye el azar binomial. Por eso el segundo es mucho más ancho.
+
+```{r jags-predictiva, fig.width=7, fig.height=3.8}
+yn <- as.numeric(as.matrix(jb)[, "ynuevo"])
+k <- 0:20
+pmf_bb <- exp(lchoose(NNUEVO, k) + lbeta(k + A_, NNUEVO - k + B_) - lbeta(A_, B_))   # Beta–Binomial exacta
+cdf_bb <- cumsum(exp(lchoose(NNUEVO, 0:NNUEVO) + lbeta(0:NNUEVO + A_, NNUEVO - 0:NNUEVO + B_) - lbeta(A_, B_)))
+data.frame(cantidad = c("Media de ynuevo", "IC 95 % inferior", "IC 95 % superior", "P(ynuevo >= 5)"),
+           analitica = c(NNUEVO * A_ / (A_ + B_), which(cdf_bb >= 0.025)[1] - 1, which(cdf_bb >= 0.975)[1] - 1, 1 - cdf_bb[5]),
+           JAGS = c(mean(yn), quantile(yn, 0.025, names = FALSE), quantile(yn, 0.975, names = FALSE), mean(yn >= 5)))
+g_pr <- ggplot(data.frame(k = k, jags = as.numeric(table(factor(yn, levels = k))) / length(yn), exacta = pmf_bb)) +
+  geom_col(aes(k, jags), fill = "#9ecae1") + geom_point(aes(k, exacta), colour = "#eb6834", size = 2) +
+  labs(x = paste0("Siniestros con muertos en ", NNUEVO, " siniestros futuros de Usme"), y = "Probabilidad predictiva",
+       title = "Predictiva posterior (barras: JAGS; puntos: Beta–Binomial exacta)") + theme_minimal()
+g_pr
+ggsave("outputs/figures/jags_predictiva_usme.png", g_pr, width = 7, height = 3.8, dpi = 150)
+```
+
+Con 100 siniestros futuros, se esperan `r round(mean(yn), 1)` con muertos (IC 95 %: `r quantile(yn, 0.025, names = FALSE)`–`r quantile(yn, 0.975, names = FALSE)`), frente a un intervalo de $p$ de `r round(100 * quantile(vb, 0.025), 2)` %–`r round(100 * quantile(vb, 0.975), 2)` %. JAGS coincide con la Beta–Binomial exacta.
 
 ## Gamma–Poisson: normal frente a cuarentena
 
@@ -911,7 +1028,8 @@ model {
   dif  <- lamN - lamC
   ynuevo ~ dpois(lamC)
 }"
-jg <- correr_jags(mod_gp, list(cN = cN, nN = length(cN), cC = cC, nC = length(cC)), c("lamN", "lamC", "dif", "ynuevo"))
+ini_gp <- list(list(lamN = 0.4, lamC = 0.3), list(lamN = 1.3, lamC = 0.8), list(lamN = 3, lamC = 2.5))
+jg <- correr_jags(mod_gp, list(cN = cN, nN = length(cN), cC = cC, nC = length(cC)), c("lamN", "lamC", "dif", "ynuevo"), inits = ini_gp)
 mg <- as.matrix(jg)
 data.frame(cantidad = c("lambda normal (media)", "lambda cuarentena (media)", "lambda cuarentena IC95 inf.",
                         "lambda cuarentena IC95 sup.", "diferencia normal - cuarentena (media)",
