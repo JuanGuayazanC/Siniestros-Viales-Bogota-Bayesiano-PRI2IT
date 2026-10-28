@@ -6,7 +6,7 @@ dir.create("outputs/figures", showWarnings = FALSE, recursive = TRUE)
 
 GRIS <- "#434343"; NARANJA <- "#df632f"; AMARILLO <- "#f1c930"; AZUL <- "#4f6266"; FONDO <- "#f3f3f3"
 tema <- theme_minimal(base_size = 15) +
-  theme(plot.background = element_rect(fill = FONDO, colour = NA), panel.background = element_rect(fill = FONDO, colour = NA),
+  theme(plot.background = element_rect(fill = NA, colour = NA), panel.background = element_rect(fill = NA, colour = NA),
         text = element_text(colour = GRIS), axis.text = element_text(colour = GRIS), panel.grid.minor = element_blank(),
         legend.position = "none")
 
@@ -37,7 +37,7 @@ f1 <- ggplot(grupos, aes(g, p, colour = cua)) + geom_errorbar(aes(ymin = li, yma
   geom_point(size = 4) + scale_colour_manual(values = c(`FALSE` = AZUL, `TRUE` = NARANJA)) +
   scale_y_continuous(labels = scales::percent_format(accuracy = .1, decimal.mark = ","), limits = c(0.010, 0.025)) +
   labs(x = NULL, y = "Siniestros con muertos") + tema
-ggsave("outputs/figures/pres_01_letalidad_anio.png", f1, width = 8, height = 4.95, dpi = 200, bg = FONDO)
+ggsave("outputs/figures/pres_01_letalidad_anio.png", f1, width = 8, height = 4.95, dpi = 200, bg = "transparent")
 
 # 2. Localidades: posterior (prior histórica) frente a Bogotá
 tab <- tab %>% mutate(v = ifelse(li > p0, "por encima", ifelse(ls < p0, "por debajo", "compatible")))
@@ -46,7 +46,7 @@ f2 <- ggplot(tab, aes(media, reorder(localidad, media), colour = v)) + geom_vlin
   geom_errorbarh(aes(xmin = li, xmax = ls), height = 0, linewidth = 1) + geom_point(size = 3) +
   scale_colour_manual(values = cols_v) + scale_x_continuous(labels = scales::percent_format(accuracy = .1, decimal.mark = ",")) +
   labs(x = "Probabilidad de siniestro con muertos (IC 95 %)", y = NULL, caption = "Línea discontinua: Bogotá (1,40 %)") + tema
-ggsave("outputs/figures/pres_02_localidades.png", f2, width = 7.4, height = 7.0, dpi = 200, bg = FONDO)
+ggsave("outputs/figures/pres_02_localidades.png", f2, width = 7.4, height = 7.0, dpi = 200, bg = "transparent")
 
 # 3. Contrastes frente al resto de la ciudad (diferencia en puntos porcentuales)
 NS <- 1e5; ty <- sum(rec$fatal); tn <- nrow(rec)
@@ -59,7 +59,7 @@ f3 <- ggplot(con, aes(dif, reorder(localidad, dif), colour = v)) + geom_vline(xi
   geom_errorbarh(aes(xmin = lo, xmax = hi), height = 0, linewidth = 1) + geom_point(size = 3) +
   scale_colour_manual(values = cols_v) +
   labs(x = "Diferencia con el resto de Bogotá (pp, IC 95 %)", y = NULL) + tema
-ggsave("outputs/figures/pres_03_contrastes.png", f3, width = 6.7, height = 8.06, dpi = 200, bg = FONDO)
+ggsave("outputs/figures/pres_03_contrastes.png", f3, width = 6.7, height = 8.06, dpi = 200, bg = "transparent")
 
 # 4. Trazas de JAGS para Usme (3 cadenas, valores iniciales dispersos)
 usm <- rec %>% filter(CODIGO_LOCALIDAD == 5)
@@ -75,5 +75,5 @@ f4 <- ggplot(tr, aes(iter, p, colour = cadena)) + geom_line(alpha = .8, linewidt
   scale_colour_manual(values = c(NARANJA, AMARILLO, AZUL)) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1, decimal.mark = ",")) +
   labs(x = "Iteración", y = "p (Usme)") + tema
-ggsave("outputs/figures/pres_04_trazas_jags.png", f4, width = 6.54, height = 3.95, dpi = 220, bg = FONDO)
+ggsave("outputs/figures/pres_04_trazas_jags.png", f4, width = 6.54, height = 3.95, dpi = 220, bg = "transparent")
 cat("Figuras listas en outputs/figures/pres_*.png\n")
