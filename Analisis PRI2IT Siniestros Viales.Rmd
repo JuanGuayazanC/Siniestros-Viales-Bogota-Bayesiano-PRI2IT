@@ -23,17 +23,18 @@ options(OutDec = ",")   # coma decimal en todo el informe
 
 ## Objetivo general
 
-**Estimar**, con modelos bayesianos Beta–Binomial y Gamma–Poisson, la probabilidad de que un siniestro vial deje al menos un muerto en cada localidad de Bogotá D.C. entre 2018 y 2020, y **comparar** la letalidad de Usme, la localidad con mayor probabilidad observada, con la del resto de la ciudad en periodo normal y durante la cuarentena de 2020.
+**Estimar**, con modelos bayesianos Beta–Binomial y Gamma–Poisson, la probabilidad de que un siniestro vial deje al menos un muerto en cada localidad de Bogotá D.C. entre 2018 y 2020.
 
 ## Objetivos específicos
 
 1. **Estimar** la probabilidad $p$ de siniestro con muertos en cada localidad, con su intervalo de credibilidad, a partir de una prior construida con la historia de la ciudad (2015–2017).
-2. **Comparar** la letalidad de cada localidad con la del resto de Bogotá mediante contrastes bayesianos, e identificar cuáles quedan por encima, por debajo o compatibles con la ciudad.
-3. **Analizar** si los siniestros con muertos siguen una distribución Binomial (y los conteos diarios una Poisson) mediante pruebas de bondad de ajuste, y qué implica el resultado para el diseño del modelo.
-4. **Comparar** la letalidad de la cuarentena de 2020 con la del periodo normal, y **evaluar** si un modelo ajustado con 2018–2019 predice cada periodo.
-5. **Analizar** qué tanto dependen las conclusiones de la prior elegida (histórica, Jeffreys, uniforme y escéptica).
-6. **Estimar**, con funciones de pérdida explícitas, qué localidades conviene intervenir primero y qué tan robusta es esa decisión.
-7. **Contrastar** los resultados analíticos con simulación MCMC en JAGS y **extenderlos** a un modelo jerárquico que corrija haber elegido la localidad más extrema.
+2. **Comparar** la letalidad de cada localidad con la del resto de Bogotá mediante contrastes bayesianos, e identificar cuáles quedan por encima, por debajo o compatibles con la ciudad, con **Usme**, la de mayor probabilidad observada, como caso central.
+3. **Analizar** si la letalidad aumentó durante la cuarentena de 2020 frente al periodo normal, y **evaluar** si un modelo ajustado con 2018–2019 predice cada periodo.
+4. **Analizar** qué tanto dependen las conclusiones de la prior elegida (histórica, Jeffreys, uniforme y escéptica).
+5. **Estimar**, con funciones de pérdida explícitas, qué localidades conviene intervenir primero y qué tan robusta es esa decisión.
+6. **Contrastar** los resultados analíticos con simulación MCMC en JAGS y **extenderlos** a un modelo jerárquico que corrija haber elegido la localidad más extrema.
+
+La verificación de que los siniestros con muertos siguen una distribución Binomial (y los conteos diarios una Poisson) mediante pruebas de bondad de ajuste no es un objetivo sino una **condición de validez** del modelo: se hace en la sección de supuestos y su conclusión se reporta en las conclusiones.
 
 ## Hipótesis del proyecto
 
@@ -143,7 +144,7 @@ ggplot(ta, aes(factor(anio), p)) +
 ```
 
 El 1,5 % de los siniestros deja muertos, el 33,3 % heridos y el 65,2 % solo daños. La tasa bajó de
-1,69 % (2015) a 1,35 % (2018) y en la cuarentena subió a 1,89 %.
+1,69 % (2015) a 1,35 % (2018) y en la cuarentena subió a 1,9 %.
 
 ```{r fig.width=10, fig.height=4}
 # serie mensual 2019-2020: menos siniestros, pero mas mortales
@@ -842,7 +843,7 @@ Lo anterior fija un umbral de "alto riesgo" sin justificarlo. Aquí se hace expl
 
 La pérdida esperada posterior es $E[L(a_1)] = c_1\,P(p_j\le p^*\mid\text{datos})$ y $E[L(a_0)] = c_2\,P(p_j>p^*\mid\text{datos})$, así que **se interviene si $P(p_j>p^*\mid\text{datos}) > c_1/(c_1+c_2)$**. Con $c_1 = 1$ y $c_2 = 3$ (omitir cuesta el triple, porque cada siniestro con muertos es irreversible) el umbral es 0,25.
 
-Como la decisión depende de $k$ y de $c_2/c_1$, se reporta cuántas localidades se intervienen en una **rejilla de supuestos**, y también el **exceso esperado de letalidad** $E[(p_j-p_0)^+]$, que no depende de ningún umbral y sirve para ordenar:
+Como la decisión depende de $k$ y de $c_2/c_1$, se reporta cuántas localidades se intervienen en una **rejilla de supuestos** de 9 escenarios, que combina 3 exigencias de riesgo ($k = 1{,}25;\ 1{,}5;\ 2$, es decir, que la localidad tenga $k$ veces la letalidad de Bogotá) con 3 costos relativos de omitir ($c_2/c_1 = 2;\ 3;\ 5$, es decir, cuántas veces cuesta más no intervenir que intervenir de más); la localidad se interviene en un escenario si su probabilidad posterior de superar $kp_0$ supera el umbral $c_1/(c_1+c_2)$. Se reporta también el **exceso esperado de letalidad** $E[(p_j-p_0)^+]$, que no depende de ningún umbral y sirve para ordenar:
 
 ```{r decision-explicita}
 dec <- tab %>% rowwise() %>%
@@ -1133,6 +1134,7 @@ cifra decimal.
 # Resultados clave y limitaciones
 
 - **Pregunta principal.** Usme tiene una probabilidad de siniestro con muertos de `r round(100 * (aH + yU) / (aH + bH + nU), 2)` % (IC 95 %: `r round(100 * qbeta(0.025, aH + yU, bH + nU - yU), 2)`–`r round(100 * qbeta(0.975, aH + yU, bH + nU - yU), 2)` %) frente a `r round(100 * p0, 2)` % en Bogotá: $P(p > p_0 \mid \text{datos}) \approx 1$, fuera del ROPE. Kennedy (`r round(100 * (aH + yK) / (aH + bH + nK), 2)` %) es compatible con la ciudad.
+- **Supuestos del modelo.** La prueba χ² de bondad de ajuste (en grupos de 50 siniestros) respalda la Binomial para si un siniestro deja muertos (p = 0,44), y la χ² de bondad de ajuste respalda la Poisson para los muertos por día (p = 0,81); la probabilidad es constante en 2018–2020 sin cuarentena.
 - **No es un artefacto de la prior ni de la elección.** Cambia poco con cuatro priors, el $BF_{01}$ de Usme está por debajo de 1 con cualquier peso de prior (Lindley solo infla a Kennedy), y el modelo jerárquico (que corrige haber escogido la localidad más extrema) da `r round(100 * comp$jerarquico[comp$localidad == "Usme"], 2)` % con $P(p>p_0)$ prácticamente 1.
 - **Cuarentena.** Los siniestros fueron menos pero más mortales (razón ≈ 1,36), y el modelo ajustado con 2018–2019 no pudo predecirlo (127 observados frente a [74; 113]).
 - **JAGS.** Reproduce las posteriores analíticas (Beta–Binomial y Gamma–Poisson) con $\hat R \approx 1$, y permite el modelo jerárquico, que no tiene forma cerrada.
