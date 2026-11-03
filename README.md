@@ -1,11 +1,11 @@
-# Estimación bayesiana de la proporción de siniestros viales fatales por localidad en Bogotá D.C.
+# Letalidad vial por localidad en Bogotá: estimación bayesiana de la probabilidad de siniestro con muertos (2015–2020)
 
 Proyecto Integrador 2 - Estadística Bayesiana (ECI Julio Garavito, 2026-2).
 Modelos Beta-Binomial y Gamma-Poisson, con pruebas de bondad de ajuste, verificación en JAGS y modelo jerárquico.
 
 ## Informe principal
 - `Analisis PRI2IT Siniestros Viales.Rmd`: análisis completo y reproducible (supuestos, prior histórica, Beta-Binomial por localidad, cuarentena de 2020, sensibilidad, validación predictiva, Gamma-Poisson, intervalos HPD, funciones de pérdida, ROPE y factor de Bayes, JAGS y extensión jerárquica).
-- `docs/informe_siniestros_viales.html`: el mismo informe ya renderizado (descargar y abrir en el navegador).
+- `docs/informe_siniestros_viales.html`: render anterior, **desactualizado** respecto al Rmd actual; volver a tejer antes de usarlo como informe final.
 - `borrador_usme_JS.Rmd`: borrador previo centrado en Usme; queda como referencia.
 
 ## Datos
@@ -20,8 +20,8 @@ Cobertura real: **2015-01-01 a 2020-12-31** (196.152 siniestros; 422.416 actores
 - R con los paquetes `readxl`, `dplyr`, `tidyr`, `ggplot2`, `rjags` y `coda`.
 - **JAGS** instalado en el sistema (<https://mcmc-jags.sourceforge.io>); `rjags` no funciona sin él.
 
-## Scripts del EDA exploratorio (opcionales)
-`scripts/00_importar.R`, `scripts/01_eda.R`, `scripts/02_eda_completo.R` y `scripts/03_beta_binomial_usme.R` generan las tablas (`outputs/tables`) y figuras (`outputs/figures`) del análisis exploratorio y del modelo de Usme.
+## Scripts auxiliares
+`scripts/00_importar.R`, `scripts/01_eda.R` y `scripts/02_eda_completo.R` corresponden al EDA exploratorio inicial. `scripts/03_beta_binomial_usme.R` y las salidas `10_usme_*` conservan un análisis piloto anterior (prior Bogotá 2015–2019 y Usme 2020); **no son los resultados del diseño final**. El análisis vigente está en el Rmd principal. `scripts/04_figuras_presentacion.R` genera figuras para Canva con el periodo y prior del diseño final.
 
 ## Hallazgos principales
 - Proporción de siniestros con muertos: 1,53 % en Bogotá. No es constante entre años ni entre localidades.

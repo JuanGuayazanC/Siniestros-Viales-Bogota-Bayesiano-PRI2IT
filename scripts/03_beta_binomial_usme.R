@@ -1,3 +1,4 @@
+# ANÁLISIS PILOTO HISTÓRICO — no corresponde al modelo final del proyecto.
 # Modelo Beta-Binomial para la proporción de siniestros fatales en Usme
 #   Prior:         Bogotá 2015-2019 (varias calibraciones, ver más abajo)
 #   Verosimilitud: Usme 2020  ->  X | p ~ Binomial(n, p)

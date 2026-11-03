@@ -1,5 +1,5 @@
 ---
-title: "¿Qué tan mortal es un siniestro vial en cada localidad de Bogotá?"
+title: "Letalidad vial por localidad en Bogotá: estimación bayesiana de la probabilidad de siniestro con muertos (2015–2020)"
 author: "Maria Paula Bonilla Martinez · Juan Sebastián Guayazán Clavijo"
 date: "`r Sys.Date()`"
 output:
@@ -329,7 +329,7 @@ c(media = m_h, peso = peso, a = aH, b = bH, li = qbeta(0.025, aH, bH), ls = qbet
 La prior es Beta(4,60; 281,29): media 1,61 %, pesa como 286 siniestros y dice que la tasa de una
 localidad cualquiera está, con 95 % de probabilidad, entre 0,50 % y 3,36 %.
 
-**Fuente de la información previa.** La prior sale de los siniestros viales registrados por la Secretaría Distrital de Movilidad entre el 1 de enero de 2015 y el 31 de diciembre de 2017: **101.500 siniestros, 1.634 con al menos un muerto** (1,61 %), en 19 localidades (sin Sumapaz) (Secretaría Distrital de Movilidad, 2021). Se construye con el método de los momentos sobre las tasas de las 19 localidades, descontando la varianza que es solo azar binomial, siguiendo la idea de los modelos jerárquicos con Beta–Binomial (Gelman et al., 2013, cap. 5). Esos datos **no se reutilizan** en la verosimilitud (2018–2020), de modo que la información previa y los datos son independientes.
+**Fuente de la información previa.** En 2015–2017, el conjunto completo contiene 101.500 siniestros y 1.634 con al menos un muerto. Para calibrar la prior se excluye Sumapaz, que aporta una sola fila en ese periodo: quedan **101.499 siniestros en 19 localidades**, con 1.634 con muertos (1,61 %) (Secretaría Distrital de Movilidad, 2021). Se aplica el método de los momentos a las tasas de esas 19 localidades, descontando la varianza atribuible al azar binomial, siguiendo la idea de los modelos jerárquicos Beta–Binomial (Gelman et al., 2013, cap. 5). Esos años no se reutilizan en la verosimilitud (2018–2020). La prior es empírico-bayesiana: sus parámetros estimados se tratan como fijos en el modelo principal; la extensión jerárquica permite estimar la variación entre localidades conjuntamente.
 
 
 # MODELO · Beta–Binomial por localidad
@@ -651,7 +651,8 @@ tapply(cN, weekdays(dias_rec), mean)     # efecto del dia de la semana
 ```
 
 Días normales: `chi2 = 1,58`, `gl = 4`, `p = 0,81`, índice de dispersión 1,05 (`p = 0,31`): **el conteo
-diario es Poisson.** En la cuarentena el ajuste es peor (`p = 0,036`) y hay subdispersión (índice
+diario es compatible con una Poisson**; la prueba no encuentra evidencia suficiente para rechazarla.
+En la cuarentena el ajuste es peor (`p = 0,036`) y hay subdispersión (índice
 0,78): hubo menos días con 0 y menos con 3 o más de lo que espera la Poisson. Se reporta como
 limitación. Viernes y sábados tienen más siniestros con muertos (1,50 y 1,64 por día) que los domingos
 (1,13).
@@ -1118,9 +1119,9 @@ Aun con el encogimiento, `P(p > p₀ | datos)` para Usme sigue siendo prácticam
 | Número fijo de ensayos | Se condiciona en n · grupos de 50 | Cumple | Cumple | Cumple |
 | Independencia | Prueba de rachas | Cumple (p = 0,25) | Cumple (p = 0,53) | Cumple (p = 0,89) |
 | Probabilidad constante 2018–2020 | χ² de homogeneidad | Cumple (p = 0,35) | Cumple (p = 0,74) | Cumple (p = 0,28) |
-| Forma binomial | χ² de bondad de ajuste | Cumple (p = 0,44) | Cumple (p = 0,66) | Cumple (p = 0,42) |
+| Forma binomial | χ² de bondad de ajuste | Compatible (p = 0,44) | Compatible (p = 0,66) | Compatible (p = 0,42) |
 | Sin sobredispersión | Varianza observada / binomial | Cumple (1,05) | Cumple (0,73) | Cumple (1,15; leve) |
-| Conteo diario Poisson | χ² de bondad de ajuste | Cumple (p = 0,81) | — | — |
+| Conteo diario Poisson | χ² de bondad de ajuste | Compatible (p = 0,81) | — | — |
 
 Lo que no se cumple, y por eso cambia el diseño: la probabilidad no es constante entre 2015 y 2020
 (`p = 0,003`), ni entre la cuarentena y el periodo normal (`p = 0,001`), ni entre localidades
@@ -1134,7 +1135,7 @@ cifra decimal.
 # Resultados clave y limitaciones
 
 - **Pregunta principal.** Usme tiene una probabilidad de siniestro con muertos de `r round(100 * (aH + yU) / (aH + bH + nU), 2)` % (IC 95 %: `r round(100 * qbeta(0.025, aH + yU, bH + nU - yU), 2)`–`r round(100 * qbeta(0.975, aH + yU, bH + nU - yU), 2)` %) frente a `r round(100 * p0, 2)` % en Bogotá: $P(p > p_0 \mid \text{datos}) \approx 1$, fuera del ROPE. Kennedy (`r round(100 * (aH + yK) / (aH + bH + nK), 2)` %) es compatible con la ciudad.
-- **Supuestos del modelo.** La prueba χ² de bondad de ajuste (en grupos de 50 siniestros) respalda la Binomial para si un siniestro deja muertos (p = 0,44), y la χ² de bondad de ajuste respalda la Poisson para los muertos por día (p = 0,81); la probabilidad es constante en 2018–2020 sin cuarentena.
+- **Supuestos del modelo.** La χ² en grupos de 50 no encuentra evidencia suficiente para rechazar la Binomial para el conteo de siniestros con muertos (p = 0,44). Para el conteo diario de siniestros con muertos, la χ² tampoco rechaza la Poisson (p = 0,81). Esto indica compatibilidad con los modelos bajo esas pruebas, no que queden demostrados; la probabilidad es constante en 2018–2020 sin cuarentena.
 - **No es un artefacto de la prior ni de la elección.** Cambia poco con cuatro priors, el $BF_{01}$ de Usme está por debajo de 1 con cualquier peso de prior (Lindley solo infla a Kennedy), y el modelo jerárquico (que corrige haber escogido la localidad más extrema) da `r round(100 * comp$jerarquico[comp$localidad == "Usme"], 2)` % con $P(p>p_0)$ prácticamente 1.
 - **Cuarentena.** Los siniestros fueron menos pero más mortales (razón ≈ 1,36), y el modelo ajustado con 2018–2019 no pudo predecirlo (127 observados frente a [74; 113]).
 - **JAGS.** Reproduce las posteriores analíticas (Beta–Binomial y Gamma–Poisson) con $\hat R \approx 1$, y permite el modelo jerárquico, que no tiene forma cerrada.
