@@ -11,9 +11,9 @@
 
 <meta name="author" content="Maria Paula Bonilla Martinez · Juan Sebastián Guayazán Clavijo" />
 
-<meta name="date" content="2026-10-21" />
+<meta name="date" content="2026-11-03" />
 
-<title>¿Qué tan mortal es un siniestro vial en cada localidad de Bogotá?</title>
+<title>Letalidad vial por localidad en Bogotá: estimación bayesiana de la probabilidad de siniestro con muertos (2015–2020)</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -1567,13 +1567,14 @@ border-radius: 0px;
 
 
 
-<h1 class="title toc-ignore">¿Qué tan mortal es un siniestro vial en
-cada localidad de Bogotá?</h1>
+<h1 class="title toc-ignore">Letalidad vial por localidad en Bogotá:
+estimación bayesiana de la probabilidad de siniestro con muertos
+(2015–2020)</h1>
 <h3 class="subtitle">Probabilidad e Inferencia · Modelos bayesianos
 Beta–Binomial y Gamma–Poisson con pruebas de bondad de ajuste</h3>
 <h4 class="author">Maria Paula Bonilla Martinez · Juan Sebastián
 Guayazán Clavijo</h4>
-<h4 class="date">2026-10-21</h4>
+<h4 class="date">2026-11-03</h4>
 
 </div>
 
@@ -1585,10 +1586,7 @@ hipótesis</h1>
 <h2><span class="header-section-number">1.1</span> Objetivo general</h2>
 <p><strong>Estimar</strong>, con modelos bayesianos Beta–Binomial y
 Gamma–Poisson, la probabilidad de que un siniestro vial deje al menos un
-muerto en cada localidad de Bogotá D.C. entre 2018 y 2020, y
-<strong>comparar</strong> la letalidad de Usme, la localidad con mayor
-probabilidad observada, con la del resto de la ciudad en periodo normal
-y durante la cuarentena de 2020.</p>
+muerto en cada localidad de Bogotá D.C. entre 2018 y 2020.</p>
 </div>
 <div id="objetivos-específicos" class="section level2" number="1.2">
 <h2><span class="header-section-number">1.2</span> Objetivos
@@ -1599,14 +1597,12 @@ localidad, con su intervalo de credibilidad, a partir de una prior
 construida con la historia de la ciudad (2015–2017).</li>
 <li><strong>Comparar</strong> la letalidad de cada localidad con la del
 resto de Bogotá mediante contrastes bayesianos, e identificar cuáles
-quedan por encima, por debajo o compatibles con la ciudad.</li>
-<li><strong>Analizar</strong> si los siniestros con muertos siguen una
-distribución Binomial (y los conteos diarios una Poisson) mediante
-pruebas de bondad de ajuste, y qué implica el resultado para el diseño
-del modelo.</li>
-<li><strong>Comparar</strong> la letalidad de la cuarentena de 2020 con
-la del periodo normal, y <strong>evaluar</strong> si un modelo ajustado
-con 2018–2019 predice cada periodo.</li>
+quedan por encima, por debajo o compatibles con la ciudad, con
+<strong>Usme</strong>, la de mayor probabilidad observada, como caso
+central.</li>
+<li><strong>Analizar</strong> si la letalidad aumentó durante la
+cuarentena de 2020 frente al periodo normal, y <strong>evaluar</strong>
+si un modelo ajustado con 2018–2019 predice cada periodo.</li>
 <li><strong>Analizar</strong> qué tanto dependen las conclusiones de la
 prior elegida (histórica, Jeffreys, uniforme y escéptica).</li>
 <li><strong>Estimar</strong>, con funciones de pérdida explícitas, qué
@@ -1616,6 +1612,11 @@ decisión.</li>
 MCMC en JAGS y <strong>extenderlos</strong> a un modelo jerárquico que
 corrija haber elegido la localidad más extrema.</li>
 </ol>
+<p>La verificación de que los siniestros con muertos siguen una
+distribución Binomial (y los conteos diarios una Poisson) mediante
+pruebas de bondad de ajuste no es un objetivo sino una <strong>condición
+de validez</strong> del modelo: se hace en la sección de supuestos y su
+conclusión se reporta en las conclusiones.</p>
 </div>
 <div id="hipótesis-del-proyecto" class="section level2" number="1.3">
 <h2><span class="header-section-number">1.3</span> Hipótesis del
@@ -1823,7 +1824,7 @@ ta</code></pre>
 <p><img role="img" src="data:image/png;base64,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" width="672" /></p>
 <p>El 1,5 % de los siniestros deja muertos, el 33,3 % heridos y el 65,2
 % solo daños. La tasa bajó de 1,69 % (2015) a 1,35 % (2018) y en la
-cuarentena subió a 1,89 %.</p>
+cuarentena subió a 1,9 %.</p>
 <pre class="r"><code># serie mensual 2019-2020: menos siniestros, pero mas mortales
 mes &lt;- sin %&gt;% filter(fecha &gt;= as.Date(&quot;2019-01-01&quot;)) %&gt;%
   mutate(mes = format(fecha, &quot;%Y-%m&quot;)) %&gt;%
@@ -2115,17 +2116,19 @@ c(media = m_h, peso = peso, a = aH, b = bH, li = qbeta(0.025, aH, bH), ls = qbet
 <p>La prior es Beta(4,60; 281,29): media 1,61 %, pesa como 286
 siniestros y dice que la tasa de una localidad cualquiera está, con 95 %
 de probabilidad, entre 0,50 % y 3,36 %.</p>
-<p><strong>Fuente de la información previa.</strong> La prior sale de
-los siniestros viales registrados por la Secretaría Distrital de
-Movilidad entre el 1 de enero de 2015 y el 31 de diciembre de 2017:
-<strong>101.500 siniestros, 1.634 con al menos un muerto</strong> (1,61
-%), en 19 localidades (sin Sumapaz) (Secretaría Distrital de Movilidad,
-2021). Se construye con el método de los momentos sobre las tasas de las
-19 localidades, descontando la varianza que es solo azar binomial,
-siguiendo la idea de los modelos jerárquicos con Beta–Binomial (Gelman
-et al., 2013, cap. 5). Esos datos <strong>no se reutilizan</strong> en
-la verosimilitud (2018–2020), de modo que la información previa y los
-datos son independientes.</p>
+<p><strong>Fuente de la información previa.</strong> En 2015–2017, el
+conjunto completo contiene 101.500 siniestros y 1.634 con al menos un
+muerto. Para calibrar la prior se excluye Sumapaz, que aporta una sola
+fila en ese periodo: quedan <strong>101.499 siniestros en 19
+localidades</strong>, con 1.634 con muertos (1,61 %) (Secretaría
+Distrital de Movilidad, 2021). Se aplica el método de los momentos a las
+tasas de esas 19 localidades, descontando la varianza atribuible al azar
+binomial, siguiendo la idea de los modelos jerárquicos Beta–Binomial
+(Gelman et al., 2013, cap. 5). Esos años no se reutilizan en la
+verosimilitud (2018–2020). La prior es empírico-bayesiana: sus
+parámetros estimados se tratan como fijos en el modelo principal; la
+extensión jerárquica permite estimar la variación entre localidades
+conjuntamente.</p>
 </div>
 <div id="modelo-betabinomial-por-localidad" class="section level1" number="9">
 <h1><span class="header-section-number">9</span> MODELO · Beta–Binomial
@@ -2671,10 +2674,11 @@ rbind(normal = gof_pois(cN), cuarentena = gof_pois(cC), usme = gof_pois(cU), his
 ##  1,127820  1,291045  1,194030  1,281481  1,194030  1,639098  1,503759</code></pre>
 <p>Días normales: <code>chi2 = 1,58</code>, <code>gl = 4</code>,
 <code>p = 0,81</code>, índice de dispersión 1,05
-(<code>p = 0,31</code>): <strong>el conteo diario es Poisson.</strong>
-En la cuarentena el ajuste es peor (<code>p = 0,036</code>) y hay
-subdispersión (índice 0,78): hubo menos días con 0 y menos con 3 o más
-de lo que espera la Poisson. Se reporta como limitación. Viernes y
+(<code>p = 0,31</code>): <strong>el conteo diario es compatible con una
+Poisson</strong>; la prueba no encuentra evidencia suficiente para
+rechazarla. En la cuarentena el ajuste es peor (<code>p = 0,036</code>)
+y hay subdispersión (índice 0,78): hubo menos días con 0 y menos con 3 o
+más de lo que espera la Poisson. Se reporta como limitación. Viernes y
 sábados tienen más siniestros con muertos (1,50 y 1,64 por día) que los
 domingos (1,13).</p>
 </div>
@@ -2998,8 +3002,13 @@ interviene si <span class="math inline">\(P(p_j&gt;p^*\mid\text{datos})
 es irreversible) el umbral es 0,25.</p>
 <p>Como la decisión depende de <span class="math inline">\(k\)</span> y
 de <span class="math inline">\(c_2/c_1\)</span>, se reporta cuántas
-localidades se intervienen en una <strong>rejilla de supuestos</strong>,
-y también el <strong>exceso esperado de letalidad</strong> <span class="math inline">\(E[(p_j-p_0)^+]\)</span>, que no depende de ningún
+localidades se intervienen en una <strong>rejilla de supuestos</strong>
+de 9 escenarios, que combina 3 exigencias de riesgo (<span class="math inline">\(k = 1{,}25;\ 1{,}5;\ 2\)</span>, es decir, que la
+localidad tenga <span class="math inline">\(k\)</span> veces la
+letalidad de Bogotá) con 3 costos relativos de omitir (<span class="math inline">\(c_2/c_1 = 2;\ 3;\ 5\)</span>, es decir, cuántas
+veces cuesta más no intervenir que intervenir de más); la localidad se
+interviene en un escenario si su probabilidad posterior de superar <span class="math inline">\(kp_0\)</span> supera el umbral <span class="math inline">\(c_1/(c_1+c_2)\)</span>. Se reporta también el
+<strong>exceso esperado de letalidad</strong> <span class="math inline">\(E[(p_j-p_0)^+]\)</span>, que no depende de ningún
 umbral y sirve para ordenar:</p>
 <pre class="r"><code>dec &lt;- tab %&gt;% rowwise() %&gt;%
   mutate(exceso_pp = 100 * integrate(function(t) pmax(t - p0, 0) * dbeta(t, a, b), 0.001, 0.12, subdivisions = 400)$value) %&gt;%
@@ -3490,9 +3499,9 @@ supuestos</h1>
 <tr class="odd">
 <td>Forma binomial</td>
 <td>χ² de bondad de ajuste</td>
-<td>Cumple (p = 0,44)</td>
-<td>Cumple (p = 0,66)</td>
-<td>Cumple (p = 0,42)</td>
+<td>Compatible (p = 0,44)</td>
+<td>Compatible (p = 0,66)</td>
+<td>Compatible (p = 0,42)</td>
 </tr>
 <tr class="even">
 <td>Sin sobredispersión</td>
@@ -3504,7 +3513,7 @@ supuestos</h1>
 <tr class="odd">
 <td>Conteo diario Poisson</td>
 <td>χ² de bondad de ajuste</td>
-<td>Cumple (p = 0,81)</td>
+<td>Compatible (p = 0,81)</td>
 <td>—</td>
 <td>—</td>
 </tr>
@@ -3529,6 +3538,13 @@ siniestro con muertos de 3,18 % (IC 95 %: 2,47–3,97 %) frente a 1,4 % en
 Bogotá: <span class="math inline">\(P(p &gt; p_0 \mid \text{datos})
 \approx 1\)</span>, fuera del ROPE. Kennedy (1,5 %) es compatible con la
 ciudad.</li>
+<li><strong>Supuestos del modelo.</strong> La χ² en grupos de 50 no
+encuentra evidencia suficiente para rechazar la Binomial para el conteo
+de siniestros con muertos (p = 0,44). Para el conteo diario de
+siniestros con muertos, la χ² tampoco rechaza la Poisson (p = 0,81).
+Esto indica compatibilidad con los modelos bajo esas pruebas, no que
+queden demostrados; la probabilidad es constante en 2018–2020 sin
+cuarentena.</li>
 <li><strong>No es un artefacto de la prior ni de la elección.</strong>
 Cambia poco con cuatro priors, el <span class="math inline">\(BF_{01}\)</span> de Usme está por debajo de 1 con
 cualquier peso de prior (Lindley solo infla a Kennedy), y el modelo
