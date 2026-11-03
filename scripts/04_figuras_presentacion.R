@@ -73,7 +73,7 @@ cat("R-hat:", gelman.diag(mc)$psrf[1, 1], "| n_eff:", round(effectiveSize(mc)), 
 tr <- do.call(rbind, lapply(1:3, function(i) data.frame(iter = 1:1500, p = as.numeric(mc[[i]][1:1500, "p"]), cadena = factor(i))))
 f4 <- ggplot(tr, aes(iter, p, colour = cadena)) + geom_line(alpha = .8, linewidth = .35) +
   scale_colour_manual(values = c(NARANJA, AMARILLO, AZUL)) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1, decimal.mark = ",")) +
+  scale_y_continuous(breaks = seq(0.01, 0.05, 0.01), labels = scales::percent_format(accuracy = 1, decimal.mark = ",")) +
   labs(x = "Iteración", y = "p (Usme)") + tema
 ggsave("outputs/figures/pres_04_trazas_jags.png", f4, width = 6.54, height = 3.95, dpi = 220, bg = "transparent")
 cat("Figuras listas en outputs/figures/pres_*.png\n")
