@@ -45,7 +45,7 @@ cols_v <- c("por encima" = NARANJA, compatible = "#7c898e", "por debajo" = AZUL)
 f2 <- ggplot(tab, aes(media, reorder(localidad, media), colour = v)) + geom_vline(xintercept = p0, linetype = "dashed", colour = GRIS) +
   geom_errorbarh(aes(xmin = li, xmax = ls), height = 0, linewidth = 1) + geom_point(size = 3) +
   scale_colour_manual(values = cols_v) + scale_x_continuous(labels = scales::percent_format(accuracy = .1, decimal.mark = ",")) +
-  labs(x = "Probabilidad de siniestro con muertos (IC 95 %)", y = NULL, caption = "Línea discontinua: Bogotá (1,40 %)") + tema +
+  labs(x = "Probabilidad de siniestro con muertos (ICr 95 %)", y = NULL, caption = "Línea discontinua: Bogotá (1,40 %)") + tema +
   theme(axis.text = element_text(size = 20), axis.title = element_text(size = 16), plot.caption = element_text(size = 16), plot.margin = margin(5, 30, 5, 5))
 ggsave("outputs/figures/pres_02_localidades.png", f2, width = 7.4, height = 7.0, dpi = 200, bg = "transparent")
 
@@ -59,7 +59,7 @@ con <- do.call(rbind, lapply(seq_len(nrow(tab)), function(i) {
 f3 <- ggplot(con, aes(dif, reorder(localidad, dif), colour = v)) + geom_vline(xintercept = 0, linetype = "dashed", colour = GRIS) +
   geom_errorbarh(aes(xmin = lo, xmax = hi), height = 0, linewidth = 1) + geom_point(size = 3) +
   scale_colour_manual(values = cols_v) +
-  labs(x = "Diferencia con el resto de Bogotá (pp, IC 95 %)", y = NULL) + tema
+  labs(x = "Diferencia con el resto de Bogotá (pp, ICr 95 %)", y = NULL) + tema
 ggsave("outputs/figures/pres_03_contrastes.png", f3, width = 6.7, height = 8.06, dpi = 200, bg = "transparent")
 
 # 4. Trazas de JAGS para Usme (3 cadenas, valores iniciales dispersos)
